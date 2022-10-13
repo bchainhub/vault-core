@@ -32,17 +32,17 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/core-coin/go-core/accounts/keystore"
+	"github.com/core-coin/go-core/common"
+	"github.com/core-coin/go-core/common/math"
+	"github.com/core-coin/go-core/crypto"
 	"github.com/pborman/uuid"
 	"golang.org/x/crypto/scrypt"
 
-	"github.com/ethereum/go-ethereum"
+	"github.com/core-coin/go-core"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/core-coin/go-core/accounts/abi"
+	"github.com/core-coin/go-core/accounts/abi/bind"
 
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
@@ -165,8 +165,8 @@ func EstimateGas(opts *bind.TransactOpts, abi abi.ABI, bytecode []byte, backend 
 		return 0, fmt.Errorf("failed to pack parameters: %v", err)
 	}
 	input = append(bytecode, packed...)
-	msg := ethereum.CallMsg{From: opts.From, To: nil, Value: opts.Value, Data: input}
-	gasLimit, err := backend.EstimateGas(ensureContext(opts.Context), msg)
+	msg := core.CallMsg{From: opts.From, To: nil, Value: opts.Value, Data: input}
+	gasLimit, err := backend.EstimateEnergy(ensureContext(opts.Context), msg)
 	if err != nil {
 		return 0, fmt.Errorf("failed to estimate gas needed: %v", err)
 	}
