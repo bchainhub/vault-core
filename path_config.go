@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/immutability-io/vault-ethereum/util"
+	"github.com/cryptohub-digital/vault-core/util"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/core-coin/go-core/common"
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/helper/cidrutil"

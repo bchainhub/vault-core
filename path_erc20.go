@@ -12,14 +12,14 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/core-coin/go-core/accounts/abi/bind"
+	"github.com/core-coin/go-core/common"
+	"github.com/core-coin/go-core/common/hexutil"
+	"github.com/core-coin/go-core/xcbclient"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
-	"github.com/immutability-io/vault-ethereum/contracts/erc20"
-	"github.com/immutability-io/vault-ethereum/util"
+	"github.com/cryptohub-digital/vault-core/contracts/erc20"
+	"github.com/cryptohub-digital/vault-core/util"
 )
 
 const erc20Contract string = "erc20"
@@ -193,12 +193,16 @@ func (b *PluginBackend) pathERC20BalanceOf(ctx context.Context, req *logical.Req
 		return nil, err
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
 
-	contractAddress := common.HexToAddress(data.Get("contract").(string))
+	contractAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
+
 	instance, err := erc20.NewErc20(contractAddress, client)
 	if err != nil {
 		return nil, err
@@ -261,14 +265,17 @@ func (b *PluginBackend) pathERC20Transfer(ctx context.Context, req *logical.Requ
 		return nil, err
 	}
 
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -352,8 +359,8 @@ func (b *PluginBackend) pathERC20Transfer(ctx context.Context, req *logical.Requ
 			"to":                 transactionParams.Address.String(),
 			"amount":             tokenAmount.String(),
 			"nonce":              tx.Nonce(),
-			"gas_price":          tx.GasPrice(),
-			"gas_limit":          tx.Gas(),
+			"gas_price":          tx.EnergyPrice(),
+			"gas_limit":          tx.Energy(),
 		},
 	}, nil
 
@@ -365,12 +372,16 @@ func (b *PluginBackend) pathERC20TotalSupply(ctx context.Context, req *logical.R
 		return nil, err
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
 
-	contractAddress := common.HexToAddress(data.Get("contract").(string))
+	contractAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
+
 	instance, err := erc20.NewErc20(contractAddress, client)
 	if err != nil {
 		return nil, err
@@ -432,14 +443,18 @@ func (b *PluginBackend) pathERC20Approve(ctx context.Context, req *logical.Reque
 	if err != nil {
 		return nil, err
 	}
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -523,8 +538,8 @@ func (b *PluginBackend) pathERC20Approve(ctx context.Context, req *logical.Reque
 			"to":                 transactionParams.Address.String(),
 			"amount":             tokenAmount.String(),
 			"nonce":              tx.Nonce(),
-			"gas_price":          tx.GasPrice(),
-			"gas_limit":          tx.Gas(),
+			"gas_price":          tx.EnergyPrice(),
+			"gas_limit":          tx.Energy(),
 		},
 	}, nil
 
@@ -546,14 +561,17 @@ func (b *PluginBackend) pathERC20TransferFrom(ctx context.Context, req *logical.
 		return nil, err
 	}
 
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -637,8 +655,8 @@ func (b *PluginBackend) pathERC20TransferFrom(ctx context.Context, req *logical.
 			"to":                 transactionParams.Address.String(),
 			"amount":             tokenAmount.String(),
 			"nonce":              tx.Nonce(),
-			"gas_price":          tx.GasPrice(),
-			"gas_limit":          tx.Gas(),
+			"gas_price":          tx.EnergyPrice(),
+			"gas_limit":          tx.Energy(),
 		},
 	}, nil
 

@@ -19,7 +19,6 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/ecdsa"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -32,6 +31,7 @@ import (
 	"regexp"
 	"time"
 
+    eddsa "github.com/core-coin/go-goldilocks"
 	"github.com/core-coin/go-core/accounts/keystore"
 	"github.com/core-coin/go-core/common"
 	"github.com/core-coin/go-core/common/math"
@@ -150,11 +150,8 @@ func Pow(a, b int64) int64 {
 }
 
 // ZeroKey removes the key from memory
-func ZeroKey(k *ecdsa.PrivateKey) {
-	b := k.D.Bits()
-	for i := range b {
-		b[i] = 0
-	}
+func ZeroKey(k *eddsa.PrivateKey) {
+    k = new(eddsa.PrivateKey)
 }
 
 // EstimateGas attempts to determine the cost for a contract deploy... super annoying
@@ -241,7 +238,7 @@ func aesCTRXOR(key, inText, iv []byte) ([]byte, error) {
 }
 
 // EncryptKey encrypts an ecdsa.PrivateKey and returns a JSON keystore
-func EncryptKey(key *ecdsa.PrivateKey, address *common.Address, id uuid.UUID, auth string, scryptN, scryptP int) ([]byte, error) {
+func EncryptKey(key *eddsa.PrivateKey, address *common.Address, id uuid.UUID, auth string, scryptN, scryptP int) ([]byte, error) {
 	authArray := []byte(auth)
 
 	salt := make([]byte, 32)
@@ -253,7 +250,7 @@ func EncryptKey(key *ecdsa.PrivateKey, address *common.Address, id uuid.UUID, au
 		return nil, err
 	}
 	encryptKey := derivedKey[:16]
-	keyBytes := math.PaddedBigBytes(key.D, 32)
+	keyBytes := key[:]
 
 	iv := make([]byte, aes.BlockSize) // 16
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
@@ -294,7 +291,7 @@ func EncryptKey(key *ecdsa.PrivateKey, address *common.Address, id uuid.UUID, au
 }
 
 // ImportJSONKeystore decrypts a JSON keystore given a passphrase
-func ImportJSONKeystore(keystoreBytes []byte, passphrase string) (*ecdsa.PrivateKey, error) {
+func ImportJSONKeystore(keystoreBytes []byte, passphrase string) (*eddsa.PrivateKey, error) {
 	var key *keystore.Key
 	key, err := keystore.DecryptKey(keystoreBytes, passphrase)
 	if err != nil {

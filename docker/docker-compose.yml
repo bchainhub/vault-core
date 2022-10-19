@@ -6,7 +6,7 @@ services:
       - develop
     links:
       - "ganache"
-    image: "cypherhat/vault-ethereum:latest"
+    image: "ghcr.io/cryptohub-digital/vault-core:latest"
     ports:
       - "9200:9200"
     volumes:
