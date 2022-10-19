@@ -11,8 +11,8 @@ RUN go mod download
 
 COPY  / .
 RUN mkdir -p /build/bin \
-    && CGO_ENABLED=1 GOOS=linux go build -a -v -i -o /build/bin/vault-ethereum . \
-    && sha256sum -b /build/bin/vault-ethereum > /build/bin/SHA256SUMS
+    && CGO_ENABLED=1 GOOS=linux go build -a -v -o /build/bin/vault-core . \
+    && sha256sum -b /build/bin/vault-core > /build/bin/SHA256SUMS
 
 FROM vault:latest
 ARG always_upgrade
@@ -23,7 +23,7 @@ USER vault
 WORKDIR /app
 RUN mkdir -p /home/vault/plugins
 
-COPY --from=builder /build/bin/vault-ethereum /home/vault/plugins/vault-ethereum
+COPY --from=builder /build/bin/vault-core /home/vault/plugins/vault-core
 COPY --from=builder /build/bin/SHA256SUMS /home/vault/plugins/SHA256SUMS
 RUN ls -la /home/vault/plugins
 HEALTHCHECK CMD nc -zv 127.0.0.1 9200 || exit 1

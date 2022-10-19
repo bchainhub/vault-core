@@ -23,19 +23,19 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
-	bip44 "github.com/immutability-io/go-ethereum-hdwallet"
+	"github.com/core-coin/go-core/accounts"
+	"github.com/core-coin/go-core/accounts/abi"
+	"github.com/core-coin/go-core/accounts/abi/bind"
+	"github.com/core-coin/go-core/common"
+	"github.com/core-coin/go-core/common/hexutil"
+	"github.com/core-coin/go-core/core/types"
+	"github.com/core-coin/go-core/xcbclient"
+	bip44 "github.com/cryptohub-digital/go-core-hdwallet"
 	"github.com/tyler-smith/go-bip39"
 
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
-	"github.com/immutability-io/vault-ethereum/util"
+	"github.com/cryptohub-digital/vault-core/util"
 )
 
 const (
@@ -494,7 +494,7 @@ func pathExistenceCheck(ctx context.Context, req *logical.Request, data *framewo
 
 // returns (nonce, toAddress, amount, gasPrice, gasLimit, error)
 
-func (b *PluginBackend) getData(client *ethclient.Client, fromAddress common.Address, data *framework.FieldData) (*TransactionParams, error) {
+func (b *PluginBackend) getData(client *xcbclient.Client, fromAddress common.Address, data *framework.FieldData) (*TransactionParams, error) {
 	transactionParams, err := b.getBaseData(client, fromAddress, data, "to")
 	if err != nil {
 		return nil, err
@@ -539,7 +539,7 @@ func (b *PluginBackend) NewWalletTransactor(chainID *big.Int, hdwallet *bip44.Wa
 	}, nil
 }
 
-func (b *PluginBackend) getBaseData(client *ethclient.Client, fromAddress common.Address, data *framework.FieldData, addressField string) (*TransactionParams, error) {
+func (b *PluginBackend) getBaseData(client *xcbclient.Client, fromAddress common.Address, data *framework.FieldData, addressField string) (*TransactionParams, error) {
 	var err error
 	var address common.Address
 	nonceData := "0"
@@ -579,14 +579,17 @@ func (b *PluginBackend) getBaseData(client *ethclient.Client, fromAddress common
 	}
 
 	if big.NewInt(0).Cmp(gasPriceIn) == 0 {
-		gasPriceIn, err = client.SuggestGasPrice(context.Background())
+		gasPriceIn, err = client.SuggestEnergyPrice(context.Background())
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if addressField != Empty {
-		address = common.HexToAddress(data.Get(addressField).(string))
+		address, err = common.HexToAddress(data.Get(addressField).(string))
+        if err != nil {
+            return nil, err
+        }
 		return &TransactionParams{
 			Nonce:    nonce,
 			Address:  &address,
@@ -617,7 +620,7 @@ func (b *PluginBackend) pathTransfer(ctx context.Context, req *logical.Request, 
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to " + config.getRPCURL())
 	}
@@ -690,7 +693,7 @@ func (b *PluginBackend) pathDeploy(ctx context.Context, req *logical.Request, da
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to " + config.getRPCURL())
 	}
@@ -728,7 +731,7 @@ func (b *PluginBackend) pathDeploy(ctx context.Context, req *logical.Request, da
 	gasLimitIn := util.ValidNumber(data.Get("gas_limit").(string))
 	gasLimit := gasLimitIn.Uint64()
 
-	transactOpts.GasPrice = transactionParams.GasPrice
+	transactOpts.EnergyPrice = transactionParams.GasPrice
 	transactOpts.Nonce = big.NewInt(int64(transactionParams.Nonce))
 	transactOpts.Value = big.NewInt(0) // in wei
 
@@ -736,7 +739,7 @@ func (b *PluginBackend) pathDeploy(ctx context.Context, req *logical.Request, da
 	if err != nil {
 		return nil, err
 	}
-	transactOpts.GasLimit = gasLimit
+	transactOpts.EnergyLimit = gasLimit
 	contractAddress, tx, _, err := bind.DeployContract(transactOpts, parsed, binRaw, client)
 	if err != nil {
 		return nil, err
@@ -752,7 +755,7 @@ func (b *PluginBackend) pathDeploy(ctx context.Context, req *logical.Request, da
 			"from":               account.Address.Hex(),
 			"contract":           contractAddress.Hex(),
 			"nonce":              transactOpts.Nonce.String(),
-			"gas_price":          transactOpts.GasPrice.String(),
+			"gas_price":          transactOpts.EnergyPrice.String(),
 			"gas_limit":          strconv.FormatUint(gasLimit, 10),
 		},
 	}, nil
@@ -764,7 +767,7 @@ func (b *PluginBackend) pathSignTx(ctx context.Context, req *logical.Request, da
 	if err != nil {
 		return nil, err
 	}
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to " + config.getRPCURL())
 	}
@@ -855,7 +858,7 @@ func (b *PluginBackend) pathReadBalance(ctx context.Context, req *logical.Reques
 		return nil, err
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -875,7 +878,7 @@ func (b *PluginBackend) pathReadBalance(ctx context.Context, req *logical.Reques
 
 // LogTx is for debugging
 func (b *PluginBackend) LogTx(tx *types.Transaction) {
-	b.Logger().Info(fmt.Sprintf("\nTX DATA: %s\nGAS: %d\nGAS PRICE: %d\nVALUE: %d\nNONCE: %d\nTO: %s\n", hexutil.Encode(tx.Data()), tx.Gas(), tx.GasPrice(), tx.Value(), tx.Nonce(), tx.To().Hex()))
+	b.Logger().Info(fmt.Sprintf("\nTX DATA: %s\nGAS: %d\nGAS PRICE: %d\nVALUE: %d\nNONCE: %d\nTO: %s\n", hexutil.Encode(tx.Data()), tx.Energy(), tx.EnergyPrice(), tx.Value(), tx.Nonce(), tx.To().Hex()))
 }
 
 func (b *PluginBackend) pathSignMessage(ctx context.Context, req *logical.Request, data *framework.FieldData) (*logical.Response, error) {

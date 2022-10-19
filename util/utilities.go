@@ -19,7 +19,6 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/ecdsa"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -32,17 +31,18 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/crypto"
+    eddsa "github.com/core-coin/go-goldilocks"
+	"github.com/core-coin/go-core/accounts/keystore"
+	"github.com/core-coin/go-core/common"
+	"github.com/core-coin/go-core/common/math"
+	"github.com/core-coin/go-core/crypto"
 	"github.com/pborman/uuid"
 	"golang.org/x/crypto/scrypt"
 
-	"github.com/ethereum/go-ethereum"
+	"github.com/core-coin/go-core"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/core-coin/go-core/accounts/abi"
+	"github.com/core-coin/go-core/accounts/abi/bind"
 
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
@@ -150,11 +150,8 @@ func Pow(a, b int64) int64 {
 }
 
 // ZeroKey removes the key from memory
-func ZeroKey(k *ecdsa.PrivateKey) {
-	b := k.D.Bits()
-	for i := range b {
-		b[i] = 0
-	}
+func ZeroKey(k *eddsa.PrivateKey) {
+    k = new(eddsa.PrivateKey)
 }
 
 // EstimateGas attempts to determine the cost for a contract deploy... super annoying
@@ -165,8 +162,8 @@ func EstimateGas(opts *bind.TransactOpts, abi abi.ABI, bytecode []byte, backend 
 		return 0, fmt.Errorf("failed to pack parameters: %v", err)
 	}
 	input = append(bytecode, packed...)
-	msg := ethereum.CallMsg{From: opts.From, To: nil, Value: opts.Value, Data: input}
-	gasLimit, err := backend.EstimateGas(ensureContext(opts.Context), msg)
+	msg := core.CallMsg{From: opts.From, To: nil, Value: opts.Value, Data: input}
+	gasLimit, err := backend.EstimateEnergy(ensureContext(opts.Context), msg)
 	if err != nil {
 		return 0, fmt.Errorf("failed to estimate gas needed: %v", err)
 	}
@@ -241,7 +238,7 @@ func aesCTRXOR(key, inText, iv []byte) ([]byte, error) {
 }
 
 // EncryptKey encrypts an ecdsa.PrivateKey and returns a JSON keystore
-func EncryptKey(key *ecdsa.PrivateKey, address *common.Address, id uuid.UUID, auth string, scryptN, scryptP int) ([]byte, error) {
+func EncryptKey(key *eddsa.PrivateKey, address *common.Address, id uuid.UUID, auth string, scryptN, scryptP int) ([]byte, error) {
 	authArray := []byte(auth)
 
 	salt := make([]byte, 32)
@@ -253,7 +250,7 @@ func EncryptKey(key *ecdsa.PrivateKey, address *common.Address, id uuid.UUID, au
 		return nil, err
 	}
 	encryptKey := derivedKey[:16]
-	keyBytes := math.PaddedBigBytes(key.D, 32)
+	keyBytes := key[:]
 
 	iv := make([]byte, aes.BlockSize) // 16
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
@@ -294,7 +291,7 @@ func EncryptKey(key *ecdsa.PrivateKey, address *common.Address, id uuid.UUID, au
 }
 
 // ImportJSONKeystore decrypts a JSON keystore given a passphrase
-func ImportJSONKeystore(keystoreBytes []byte, passphrase string) (*ecdsa.PrivateKey, error) {
+func ImportJSONKeystore(keystoreBytes []byte, passphrase string) (*eddsa.PrivateKey, error) {
 	var key *keystore.Key
 	key, err := keystore.DecryptKey(keystoreBytes, passphrase)
 	if err != nil {

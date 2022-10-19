@@ -10,14 +10,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/core-coin/go-core/accounts/abi/bind"
+	"github.com/core-coin/go-core/common"
+	"github.com/core-coin/go-core/common/hexutil"
+	"github.com/core-coin/go-core/xcbclient"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
-	"github.com/immutability-io/vault-ethereum/contracts/erc721"
-	"github.com/immutability-io/vault-ethereum/util"
+	"github.com/cryptohub-digital/vault-core/contracts/erc721"
+	"github.com/cryptohub-digital/vault-core/util"
 )
 
 const erc721Contract string = "erc-721"
@@ -487,14 +487,17 @@ func (b *PluginBackend) pathERC721SafeTransferFrom(ctx context.Context, req *log
 		return nil, err
 	}
 
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -548,8 +551,8 @@ func (b *PluginBackend) pathERC721SafeTransferFrom(ctx context.Context, req *log
 			"from":               account.Address.Hex(),
 			"to":                 transactionParams.Address.String(),
 			"nonce":              tx.Nonce(),
-			"gas_price":          tx.GasPrice(),
-			"gas_limit":          tx.Gas(),
+			"gas_price":          tx.EnergyPrice(),
+			"gas_limit":          tx.Energy(),
 		},
 	}, nil
 }
@@ -583,14 +586,17 @@ func (b *PluginBackend) pathERC721Approve(ctx context.Context, req *logical.Requ
 		return nil, err
 	}
 
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -642,8 +648,8 @@ func (b *PluginBackend) pathERC721Approve(ctx context.Context, req *logical.Requ
 			"from":               account.Address.Hex(),
 			"to":                 transactionParams.Address.String(),
 			"nonce":              tx.Nonce(),
-			"gas_price":          tx.GasPrice(),
-			"gas_limit":          tx.Gas(),
+			"gas_price":          tx.EnergyPrice(),
+			"gas_limit":          tx.Energy(),
 		},
 	}, nil
 }
@@ -676,14 +682,17 @@ func (b *PluginBackend) pathERC721SetApprovalForAll(ctx context.Context, req *lo
 		return nil, err
 	}
 
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -735,8 +744,8 @@ func (b *PluginBackend) pathERC721SetApprovalForAll(ctx context.Context, req *lo
 			"from":               account.Address.Hex(),
 			"operator":           transactionParams.Address.String(),
 			"nonce":              tx.Nonce(),
-			"gas_price":          tx.GasPrice(),
-			"gas_limit":          tx.Gas(),
+			"gas_price":          tx.EnergyPrice(),
+			"gas_limit":          tx.Energy(),
 		},
 	}, nil
 }
@@ -767,14 +776,17 @@ func (b *PluginBackend) pathERC721BalanceOf(ctx context.Context, req *logical.Re
 		return nil, err
 	}
 
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -851,14 +863,17 @@ func (b *PluginBackend) pathERC721OwnerOf(ctx context.Context, req *logical.Requ
 		return nil, err
 	}
 
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -922,14 +937,17 @@ func (b *PluginBackend) pathERC721GetApproved(ctx context.Context, req *logical.
 		return nil, err
 	}
 
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -993,14 +1011,17 @@ func (b *PluginBackend) pathERC721IsApprovedForAll(ctx context.Context, req *log
 		return nil, err
 	}
 
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -1064,14 +1085,17 @@ func (b *PluginBackend) pathERC721TokenByIndex(ctx context.Context, req *logical
 		return nil, err
 	}
 
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -1125,14 +1149,17 @@ func (b *PluginBackend) pathERC721TokenOfOwnerByIndex(ctx context.Context, req *
 		return nil, err
 	}
 
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -1192,14 +1219,17 @@ func (b *PluginBackend) pathERC721Metadata(ctx context.Context, req *logical.Req
 		return nil, err
 	}
 
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
@@ -1261,14 +1291,17 @@ func (b *PluginBackend) pathERC721TokenURI(ctx context.Context, req *logical.Req
 		return nil, err
 	}
 
-	tokenAddress := common.HexToAddress(data.Get("contract").(string))
+	tokenAddress, err := common.HexToAddress(data.Get("contract").(string))
+	if err != nil {
+		return nil, err
+	}
 
 	chainID := util.ValidNumber(config.ChainID)
 	if chainID == nil {
 		return nil, fmt.Errorf("invalid chain ID")
 	}
 
-	client, err := ethclient.Dial(config.getRPCURL())
+	client, err := xcbclient.Dial(config.getRPCURL())
 	if err != nil {
 		return nil, err
 	}
